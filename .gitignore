@@ -1,2 +1,4 @@
 scilla-remote
 bin
+.vscode
+__pycache__
