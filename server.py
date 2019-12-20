@@ -2,7 +2,6 @@ import os
 import base64
 from flask import Flask, request, jsonify
 
-
 app = Flask(__name__)
 
 # Command line interface
@@ -17,7 +16,6 @@ def scilla_file(filename, source):
 
     with open(path, 'w') as f:
         f.write(source)
-
     print("* {0} saved to disk.".format(filename))
        
     return filename
