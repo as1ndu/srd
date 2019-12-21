@@ -70,3 +70,6 @@ def debug():
     data = jsonify(payload) # Convert data to json
 
     return data
+
+if __name__ == "__main__":
+    app.run(debug=True)
