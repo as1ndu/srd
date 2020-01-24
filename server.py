@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 # Command line interface
 def cli(cmd):
-    stream = os.popen('tree')
+    stream = os.popen(cmd)
     output = stream.read()
     return output
 
@@ -38,6 +38,11 @@ def cashflow_ananysis(filename, gas_limit):
     cashflow_ananysis = cli(command)
     return cashflow_ananysis
 
+# Cash flow analysis
+def type_info(filename, gas_limit):
+    command = "./scilla-checker -cf -libdir scilla/bin/stdlib -gaslimit "  + gas_limit + " " + filename + "-jsonerrors"
+    cashflow_ananysis = cli(command)
+    return cashflow_ananysis
 
 @app.route("/debug", methods=["POST"])
 def debug():
@@ -55,7 +60,7 @@ def debug():
         valid_source =  decoded_source[:len(decoded_source)-1]
 
         # Save scilla file to disk
-        scilla_file(filename,   valid_source)
+        scilla_file(filename, valid_source)
 
         print("debugged {0} ".format(filename))
 
@@ -64,6 +69,7 @@ def debug():
         "messages": messages(filename, gas_limit),
         "gas_usage": gas_usage(filename, gas_limit),
         "cashflow_analysis": cashflow_ananysis(filename, gas_limit),
+        "type_info":type_info(filename, gas_limit),
         "scilla_version": 0
     }
 

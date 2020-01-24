@@ -2,10 +2,14 @@
 
 A tiny, but fully fledged remote debugging API for Scilla contracts.
 
-## [ ] Warnings
+Will allow debugging of scilla-contracts without the need to compile your own binaries.
 
-## [ ] Errors
+## [X] Warnings
 
-## [ ] Gas Usage
+## [X] Errors
+
+## [X] Gas Usage
 
 ## [ ] Cash flow analysis
+
+## [ ] Type Info
