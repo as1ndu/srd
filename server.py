@@ -1,5 +1,7 @@
 import os
+import json
 import base64
+import hashlib
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
@@ -16,45 +18,27 @@ def scilla_file(filename, source):
 
     with open(path, 'w') as f:
         f.write(source)
-    print("* {0} saved to disk.".format(filename))
-       
+    print("* {0} saved to disk.".format(filename))    
     return filename
 
 # Warnings & Error messages
 def messages(filename, gas_limit):
-    command = "./scilla-checker  -libdir scilla/bin/stdlib -gaslimit "  + gas_limit + " " + filename + "-jsonerrors"
+    command = "scilla-checker -cf -typeinfo -libdir scilla/bin/stdlib -gaslimit "  + gas_limit + " " + filename + " -jsonerrors"
     messages = cli(command)
+    print("*Warnings & Err Messages*")
     return messages
-
-# Gas usage analyser
-def gas_usage(filename, gas_limit):
-    command = "./scilla-checker  -libdir scilla/bin/stdlib -gaslimit "  + gas_limit + " " + filename + "-jsonerrors"
-    gas_usage = cli(command)
-    return gas_usage
-
-# Cash flow analysis
-def cashflow_ananysis(filename, gas_limit):
-    command = "./scilla-checker -cf -libdir scilla/bin/stdlib -gaslimit "  + gas_limit + " " + filename + "-jsonerrors"
-    cashflow_ananysis = cli(command)
-    return cashflow_ananysis
-
-# Cash flow analysis
-def type_info(filename, gas_limit):
-    command = "./scilla-checker -cf -libdir scilla/bin/stdlib -gaslimit "  + gas_limit + " " + filename + "-jsonerrors"
-    cashflow_ananysis = cli(command)
-    return cashflow_ananysis
 
 @app.route("/debug", methods=["POST"])
 def debug():
     # Only allow post requests
     if request.method == 'POST':
 
-        #read POST request data
+        # Read POST request data
         filename = str(request.values.to_dict(flat=False)['filename'][0])
         gas_limit = str(request.values.to_dict(flat=False)['gas_limit'][0])
         source = str(request.values.to_dict(flat=False)['source'][0])
 
-        # decode scilla source
+        # Decode scilla source
         decoded_source = str(base64.b64decode(source)).encode().decode("unicode-escape")
         decoded_source = decoded_source.replace("b\'","",1)
         valid_source =  decoded_source[:len(decoded_source)-1]
@@ -64,16 +48,28 @@ def debug():
 
         print("debugged {0} ".format(filename))
 
+    message_dic = json.loads(str( messages(filename,  gas_limit) ))
+
+    if 'errors' in message_dic: # Err handling for minning Error messages key
+        pass
+    else:
+        message_dic['errors'] = []
+
+    #print( str( messages(filename,  gas_limit) ))
+
     payload = {
         "filename": filename,
-        "messages": messages(filename, gas_limit),
-        "gas_usage": gas_usage(filename, gas_limit),
-        "cashflow_analysis": cashflow_ananysis(filename, gas_limit),
-        "type_info":type_info(filename, gas_limit),
-        "scilla_version": 0
+        "gas_limit": gas_limit,
+        "cash_flow_analysis": message_dic['cashflow_tags'],
+        "gas_usage": message_dic['gas_remaining'],
+        "warnings": message_dic['warnings'],
+        "error": message_dic['errors'],
+        "type_info": message_dic['type_info']
     }
 
     data = jsonify(payload) # Convert data to json
+
+    print(payload)
 
     return data
 
