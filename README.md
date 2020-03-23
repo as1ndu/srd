@@ -10,6 +10,6 @@ Will allow debugging of scilla-contracts without the need to compile your own bi
 
 ## [X] Gas Usage
 
-## [ ] Cash flow analysis
+## [X] Cash flow analysis
 
-## [ ] Type Info
+## [X] Type Info

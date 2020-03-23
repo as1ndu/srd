@@ -36,7 +36,7 @@ def scilla_file(filename, source):
 
 # Warnings, Cashflow analysis & Error messages
 def messages(filename, gas_limit):
-    command = "scilla-checker -cf -typeinfo -libdir scilla/bin/stdlib -gaslimit "  + gas_limit + " " + filename + " -jsonerrors"
+    command = "scilla-checker -cf -typeinfo -libdir /home/ubuntu/scilla/src/stdlib -gaslimit "  + gas_limit + " " + filename + " -jsonerrors"
     messages = cli(command)
     print("*Warnings & Err Messages*")
     return messages
@@ -127,4 +127,4 @@ def debug():
     return data
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host=0.0.0.0)
