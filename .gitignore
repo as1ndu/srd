@@ -3,3 +3,7 @@ bin
 .vscode
 env
 __pycache__
+win
+*.scilla
+*.js
+*.txt

@@ -1,4 +1,5 @@
 import os
+from shell import shell
 import json
 import base64
 import hashlib
@@ -8,8 +9,20 @@ app = Flask(__name__)
 
 # Command line interface
 def cli(cmd):
-    stream = os.popen(cmd)
-    output = stream.read()
+    stream =  shell(cmd)
+
+    stdout = stream.output(raw=True)
+    err  = stream.errors(raw=True)
+
+    output = ''
+
+    if stdout:
+       # print("output {0}".format(stdout))
+        output = stdout
+
+    else:
+       # print("output {0}".format(err))
+        output = err
     return output
 
 # Reconstruct scilla file via REST
@@ -21,7 +34,7 @@ def scilla_file(filename, source):
     print("* {0} saved to disk.".format(filename))    
     return filename
 
-# Warnings & Error messages
+# Warnings, Cashflow analysis & Error messages
 def messages(filename, gas_limit):
     command = "scilla-checker -cf -typeinfo -libdir scilla/bin/stdlib -gaslimit "  + gas_limit + " " + filename + " -jsonerrors"
     messages = cli(command)
@@ -38,25 +51,64 @@ def debug():
         gas_limit = str(request.values.to_dict(flat=False)['gas_limit'][0])
         source = str(request.values.to_dict(flat=False)['source'][0])
 
-        # Decode scilla source
-        decoded_source = str(base64.b64decode(source)).encode().decode("unicode-escape")
-        decoded_source = decoded_source.replace("b\'","",1)
-        valid_source =  decoded_source[:len(decoded_source)-1]
+        try:
+            # Decoding for non chunked base64 scilla files
+            decoded_source = base64.b64decode(source).decode("unicode-escape") # Decode scilla source
+            scilla_file(filename, decoded_source) # save scilla file to disk
+        except:
+            # Decoding for chunked base64 scilla files
+            valid_source = source.replace('-','+') # strip out irlsafe placeholder
+            full_chunk = b''
+            single_chunk = valid_source + '==='
+            decoded_chunk = base64.b64decode(single_chunk)
 
-        # Save scilla file to disk
-        scilla_file(filename, valid_source)
+            full_chunk = full_chunk + decoded_chunk 
 
-        print("debugged {0} ".format(filename))
+            decoded_source = full_chunk.decode("unicode-escape") # decode base64 scilla file as unicode
+            scilla_file(filename, decoded_source) # save scilla file to disk
+            
 
+    print("debugged {0} ".format(filename))
+
+
+    # get debug info as string
     message_dic = json.loads(str( messages(filename,  gas_limit) ))
 
-    if 'errors' in message_dic: # Err handling for minning Error messages key
+
+    # insert placeholders for standard error messages from scilla-checker
+    if 'errors' in message_dic:
         pass
     else:
         message_dic['errors'] = []
 
-    #print( str( messages(filename,  gas_limit) ))
+    if 'cashflow_tags' in message_dic:
+        pass
+    else:
+        message_dic['cashflow_tags'] = []
+    
+    if 'type_info' in message_dic:
+        pass
+    else:
+        message_dic['type_info'] = []
 
+    if 'gas_remaining' in message_dic:
+        pass
+    else:
+        message_dic['gas_remaining'] = gas_limit
+
+    if 'filename' in message_dic: 
+        pass
+    else:
+        message_dic['filename'] = filename
+
+    if 'gas_limit' in message_dic:
+        pass
+    else:
+        message_dic['gas_limit'] = gas_limit
+
+    # print(message_dic)
+
+    # construct payload
     payload = {
         "filename": filename,
         "gas_limit": gas_limit,
@@ -66,10 +118,11 @@ def debug():
         "error": message_dic['errors'],
         "type_info": message_dic['type_info']
     }
+    
 
-    data = jsonify(payload) # Convert data to json
+    data = jsonify(payload)
 
-    print(payload)
+    shell('rm -r *.scilla') 
 
     return data
 
