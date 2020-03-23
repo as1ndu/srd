@@ -1,1 +1,1 @@
-gunicorn -D 0.0.0.0:5000 server:app
+gunicorn -D  --bind 0.0.0.0:5000 server:app --limit-request-line 0
